@@ -10,10 +10,10 @@ export const nameField = z
 
 export const emailField = z
   .string()
-  .email('Invalid email address')
-  .max(254, 'Email cannot exceed 254 characters')
   .trim()
-  .toLowerCase();
+  .toLowerCase()
+  .max(254, 'Email cannot exceed 254 characters')
+  .email('Invalid email address');
 
 export const ageField = z
   .number()

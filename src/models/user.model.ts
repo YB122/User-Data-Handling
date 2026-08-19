@@ -52,14 +52,9 @@ userSchema.index({ email: 1 }, { unique: true });
 /** Index for the optional age filter on GET /users. */
 userSchema.index({ age: 1 });
 
-userSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) return next();
-  try {
-    this.password = await hashPassword(this.password);
-    return next();
-  } catch (err) {
-    return next(err as Error);
-  }
+userSchema.pre('save', async function () {
+  if (!this.isModified('password')) return;
+  this.password = await hashPassword(this.password);
 });
 
 export const User: Model<IUser> = mongoose.model<IUser>('User', userSchema);
