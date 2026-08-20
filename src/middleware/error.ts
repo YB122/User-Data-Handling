@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import { env } from '../config/env.js';
 import { ApiError } from '../utils/apiError.js';
 import { HttpStatus } from '../utils/httpStatus.js';
+import { logger } from '../utils/logger.js';
 
 export function notFoundHandler(req: Request, _res: Response, next: NextFunction): void {
   next(ApiError.notFound(`Route ${req.method} ${req.originalUrl} not found`));
@@ -55,10 +56,10 @@ export function errorHandler(
     return;
   }
 
-  // Unexpected server error - never leak internals to the client
+  // Unexpected server error - never leak internals to the client,
+  // but keep full details in the server-side logs for debugging.
   if (env.NODE_ENV !== 'test') {
-    // eslint-disable-next-line no-console
-    console.error('[UnhandledError]', err);
+    logger.error('[UnhandledError]', { error: err });
   }
   res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
     error: { code: 'INTERNAL_ERROR', message: 'Something went wrong on the server' },

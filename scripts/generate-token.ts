@@ -9,6 +9,7 @@
 import { connectDB, disconnectDB } from '../src/config/db.js';
 import { User } from '../src/models/user.model.js';
 import { signToken } from '../src/utils/jwt.js';
+import { logger } from '../src/utils/logger.js';
 
 async function main(): Promise<void> {
   await connectDB();
@@ -23,6 +24,7 @@ async function main(): Promise<void> {
     });
   }
 
+  // The token itself is the script's output - printed to stdout.
   // eslint-disable-next-line no-console
   console.log(signToken(user.id));
 
@@ -30,7 +32,6 @@ async function main(): Promise<void> {
 }
 
 main().catch((err) => {
-  // eslint-disable-next-line no-console
-  console.error('Failed to generate token:', err);
+  logger.error('Failed to generate token', { error: err });
   process.exit(1);
 });

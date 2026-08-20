@@ -4,6 +4,7 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import { env } from './config/env.js';
 import { errorHandler, notFoundHandler } from './middleware/error.js';
+import { httpLogger } from './middleware/httpLogger.js';
 import { apiLimiter } from './middleware/rateLimit.js';
 import userRoutes from './routes/user.routes.js';
 
@@ -40,6 +41,9 @@ export function createApp(): Express {
   app.use(express.json({ limit: '10kb' }));
 
   app.use('/api', apiLimiter);
+
+  // Access log (no bodies/headers/tokens in the output)
+  app.use(httpLogger);
 
   app.use('/api/users', userRoutes);
 

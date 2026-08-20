@@ -4,7 +4,11 @@ RESTful API for managing User Profiles with JWT authentication — built with
 **TypeScript, Express 5, MongoDB (Mongoose)** and hardened against common web
 vulnerabilities. Written as a backend technical assessment.
 
-- Tests: 44 unit + integration tests (Vitest + Supertest + mongodb-memory-server)
+- Tests: 46 unit + integration tests (Vitest + Supertest + mongodb-memory-server)
+
+**Live deployment:** <https://user-data-handling.vercel.app>
+
+**API documentation (Postman):** <https://documenter.getpostman.com/view/50245319/2sBYArUCgf>
 
 ---
 
@@ -57,6 +61,7 @@ vulnerabilities. Written as a backend technical assessment.
 | Validation    | zod                              |
 | Auth          | jsonwebtoken + bcryptjs          |
 | Security      | helmet, express-rate-limit, cookie-parser, cors |
+| Logging       | winston (structured JSON in production, request access logs) |
 | Tests         | Vitest, Supertest, mongodb-memory-server |
 
 ## Project structure
@@ -78,6 +83,7 @@ vulnerabilities. Written as a backend technical assessment.
 │   ├── middleware/
 │   │   ├── auth.ts         # JWT verification (Bearer or cookie)
 │   │   ├── error.ts        # 404 + centralized error handler
+│   │   ├── httpLogger.ts   # winston access log (no sensitive data)
 │   │   ├── rateLimit.ts    # Global API rate limit
 │   │   └── validate.ts     # zod validation middleware
 │   ├── routes/
@@ -89,7 +95,6 @@ vulnerabilities. Written as a backend technical assessment.
 │   ├── unit/               # schema + util unit tests
 │   └── integration/        # users API tests (CRUD, auth guard, injection)
 ├── vercel.json             # Vercel serverless config
-└── PLAN.md                 # Task breakdown & prioritization
 ```
 
 ## Getting started
@@ -126,7 +131,7 @@ npm start
 
 ## API reference
 
-**Base URL:** `http://localhost:3000` (or your deployed URL)
+**Base URL:** `http://localhost:3000` (or the deployed URL <https://user-data-handling.vercel.app>)
 
 All `User` objects are returned **without the password**:
 
@@ -332,6 +337,7 @@ curl -X DELETE http://localhost:3000/api/users/60d21b4667d0d8992e610c85 \
 | **Brute force**       | Global rate limit: 120 requests / min per IP                              |
 | **DoS**               | `express.json({ limit: '10kb' })`, capped pagination (max 100)             |
 | **Info leakage**      | `x-powered-by` disabled; 500 responses never include stack traces          |
+| **Log hygiene**       | winston access logs only record method, path, status and duration — request bodies, passwords, JWTs and cookies are never written to logs (covered by a test) |
 | **Secrets**           | `.env` only; `.env.example` committed; `JWT_SECRET` validated (>= 32 chars)|
 
 ## Testing
@@ -348,8 +354,8 @@ Coverage:
   ApiError.
 - **Integration** (in-memory MongoDB) — full CRUD on all 5 endpoints,
   pagination, age filtering, duplicate emails (409), auth guard (401),
-  NoSQL-injection rejection (400), password re-hash on update, 404s and
-  validation errors.
+  NoSQL-injection rejection (400), password re-hash on update, 404s,
+  validation errors, and log hygiene (no passwords/tokens in log output).
 
 ## Vercel deployment
 
@@ -367,9 +373,6 @@ to avoid exhausting connection limits.
 3. Deploy. The serverless function automatically handles all routes.
 
 ## Task breakdown
-
-The full subtask breakdown and prioritization live in
-[`PLAN.md`](./PLAN.md) (P0 core → P1 correctness/security → P2 tests → P3 docs).
 
 | # | Subtask                                              | Priority | Status |
 | - | ---------------------------------------------------- | -------- | ------ |

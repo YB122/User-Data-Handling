@@ -1,6 +1,7 @@
 import express, { type Express } from 'express';
 import { createApp } from '../src/app.js';
 import { connectDB } from '../src/config/db.js';
+import { logger } from '../src/utils/logger.js';
 
 /**
  * Vercel serverless entrypoint.
@@ -25,8 +26,7 @@ handler.use(app);
 
 handler.use(
   (err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
-    // eslint-disable-next-line no-console
-    console.error('[ServerlessDbError]', err);
+    logger.error('[ServerlessDbError]', { error: err });
     res.status(500).json({
       error: { code: 'INTERNAL_ERROR', message: 'Database connection failed' },
     });
