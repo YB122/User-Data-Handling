@@ -29,15 +29,16 @@ vulnerabilities. Written as a backend technical assessment.
 
 - The API exposes exactly **5 endpoints** for User Profiles:
 
-  | Method | Endpoint         | Description                                    |
-  | ------ | ---------------- | ---------------------------------------------- |
-  | POST   | `/api/users`     | Create a new user profile                      |
-  | GET    | `/api/users`     | Fetch all user profiles (pagination + age filter) |
-  | GET    | `/api/users/:id` | Fetch a specific user profile by ID            |
-  | PUT    | `/api/users/:id` | Update an existing user profile                |
-  | DELETE | `/api/users/:id` | Delete a user profile by ID                    |
+  | Method | Endpoint         | Auth | Description                                    |
+  | ------ | ---------------- | ---- | ---------------------------------------------- |
+  | POST   | `/api/users`     | none | Create a new user profile (public)             |
+  | GET    | `/api/users`     | JWT  | Fetch all user profiles (pagination + age filter) |
+  | GET    | `/api/users/:id` | JWT  | Fetch a specific user profile by ID            |
+  | PUT    | `/api/users/:id` | JWT  | Update an existing user profile                |
+  | DELETE | `/api/users/:id` | JWT  | Delete a user profile by ID                    |
 
-- Token-based authentication (JWT) required on all 5 endpoints
+- `POST /api/users` is **public** (registration-style creation — no token needed).
+- The remaining 4 endpoints require token-based authentication (JWT).
 - User fields: `id` (auto), `name` (required), `email` (unique, required),
   `age` (optional), `password`, `createdAt`/`updatedAt` (auto)
 - Pagination (`limit`/`offset`) + optional filtering by `age`
@@ -142,6 +143,9 @@ All `User` objects are returned **without the password**:
 
 ### POST `/api/users` — create a user profile
 
+**Public endpoint — no token required.** The response includes a JWT so the
+new user can immediately call the protected endpoints.
+
 **Body** (only `name`, `email`, `age`, `password` are accepted; anything else is stripped):
 
 ```json
@@ -164,13 +168,16 @@ All `User` objects are returned **without the password**:
     "age": 29,
     "createdAt": "2026-08-19T23:06:59.037Z",
     "updatedAt": "2026-08-19T23:06:59.037Z"
-  }
+  },
+  "meta": { "token": "eyJhbGciOiJIUzI1NiIs..." }
 }
 ```
 
-Errors: `400` invalid payload · `401` missing/invalid token · `409` duplicate email
+Errors: `400` invalid payload · `409` duplicate email
 
 ### GET `/api/users` — list users (paginated, optional age filter)
+
+**Requires auth: `Authorization: Bearer <token>`**
 
 **Query params**
 
@@ -253,19 +260,25 @@ All errors use a consistent envelope:
 
 ## Authentication
 
-There are no register/login endpoints. Tokens are issued by a dev script so
-you can exercise the protected endpoints:
+`POST /api/users` is public and returns a JWT with the created user — that's
+the simplest way to get a token:
 
 ```bash
-# Create (or reuse) a user and print a valid JWT for it
-npm run token -- alice@example.com
-# -> eyJhbGciOiJIUzI1NiIs...
-
-# Or use the default email
-npm run token
+curl -X POST http://localhost:3000/api/users \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Jane Doe","email":"jane@example.com","age":29,"password":"superSecret1"}'
+# -> { "data": { ... }, "meta": { "token": "<TOKEN>" } }
 ```
 
-Then send the token on every request:
+There is also a dev script that issues a token for any email (without hitting
+the API), useful when you don't want to create a new user:
+
+```bash
+npm run token -- alice@example.com
+# -> eyJhbGciOiJIUzI1NiIs...
+```
+
+Then send the token on the protected endpoints:
 
 ```bash
 curl http://localhost:3000/api/users \
@@ -280,30 +293,28 @@ curl http://localhost:3000/api/users \
 **Full curl walkthrough:**
 
 ```bash
-# 1. Get a token
-TOKEN=$(npm run token -- alice@example.com)
-
-# 2. Create a user
+# 1. Create a user - the response includes a token
 curl -X POST http://localhost:3000/api/users \
-  -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"name":"John Smith","email":"john@example.com","age":31,"password":"superSecret1"}'
+# -> { ..., "meta": { "token": "<TOKEN>" } }
+TOKEN=<TOKEN>
 
-# 3. List users (paginated + age filter)
+# 2. List users (paginated + age filter)
 curl "http://localhost:3000/api/users?limit=10&offset=0&age=31" \
   -H "Authorization: Bearer $TOKEN"
 
-# 4. Get one user
+# 3. Get one user
 curl http://localhost:3000/api/users/60d21b4667d0d8992e610c85 \
   -H "Authorization: Bearer $TOKEN"
 
-# 5. Update a user
+# 4. Update a user
 curl -X PUT http://localhost:3000/api/users/60d21b4667d0d8992e610c85 \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"age":32}'
 
-# 6. Delete a user
+# 5. Delete a user
 curl -X DELETE http://localhost:3000/api/users/60d21b4667d0d8992e610c85 \
   -H "Authorization: Bearer $TOKEN"
 ```

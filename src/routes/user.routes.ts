@@ -13,13 +13,12 @@ import { createUserSchema, updateUserSchema } from '../schemas/user.schema.js';
 
 const router = Router();
 
-// Every user endpoint requires a valid JWT (Bearer header or httpOnly cookie).
-router.use(requireAuth);
-
+// POST /api/users is public (registration-style creation).
+// All other endpoints require a valid JWT (Bearer header or httpOnly cookie).
 router.post('/', validate({ body: createUserSchema }), createUser);
-router.get('/', validate({ query: listQuerySchema }), listUsers);
-router.get('/:id', validate({ params: idParamsSchema }), getUserById);
-router.put('/:id', validate({ params: idParamsSchema, body: updateUserSchema }), updateUser);
-router.delete('/:id', validate({ params: idParamsSchema }), deleteUser);
+router.get('/', requireAuth, validate({ query: listQuerySchema }), listUsers);
+router.get('/:id', requireAuth, validate({ params: idParamsSchema }), getUserById);
+router.put('/:id', requireAuth, validate({ params: idParamsSchema, body: updateUserSchema }), updateUser);
+router.delete('/:id', requireAuth, validate({ params: idParamsSchema }), deleteUser);
 
 export default router;

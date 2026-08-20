@@ -48,13 +48,23 @@ describe('authentication guard', () => {
 });
 
 describe('POST /api/users', () => {
-  it('creates a user profile', async () => {
+  it('creates a user profile without a token and returns a JWT (public endpoint)', async () => {
+    const res = await request(app)
+      .post('/api/users')
+      .send({ name: 'Public User', email: 'public@example.com', age: 21, password: 'superSecret1' });
+    expect(res.status).toBe(201);
+    expect(res.body.data.name).toBe('Public User');
+    expect(res.body.meta.token).toBeTruthy();
+  });
+
+  it('creates a user profile and returns a JWT', async () => {
     const res = await createUser();
     expect(res.status).toBe(201);
     expect(res.body.data).toMatchObject({ name: 'Alice Example', age: 30 });
     expect(res.body.data).toHaveProperty('id');
     expect(res.body.data).toHaveProperty('createdAt');
     expect(res.body.data).not.toHaveProperty('password');
+    expect(res.body.meta.token).toBeTruthy();
   });
 
   it('normalizes email and strips unknown fields', async () => {

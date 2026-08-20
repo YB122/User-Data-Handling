@@ -4,6 +4,7 @@ import type { ListQuery } from '../schemas/common.schema.js';
 import type { CreateUserInput, UpdateUserInput } from '../schemas/user.schema.js';
 import { ApiError } from '../utils/apiError.js';
 import { HttpStatus } from '../utils/httpStatus.js';
+import { signToken } from '../utils/jwt.js';
 import { sendSuccess } from '../utils/response.js';
 import { toUserView } from '../utils/userView.js';
 
@@ -18,7 +19,9 @@ export async function createUser(req: Request, res: Response): Promise<void> {
   }
 
   const user = await User.create({ name, email, age, password });
-  sendSuccess(res, HttpStatus.CREATED, toUserView(user));
+  // The created user immediately receives a JWT so they can use the
+  // protected endpoints without a separate login step.
+  sendSuccess(res, HttpStatus.CREATED, toUserView(user), { token: signToken(user.id) });
 }
 
 /** GET /users?limit=&offset=&age= */
