@@ -104,8 +104,10 @@ vulnerabilities. Written as a backend technical assessment.
 npm install
 
 # 2. Configure environment
-cp .env.example .env
-#    edit .env: set MONGODB_URI and JWT_SECRET (min 32 chars)
+#    No env template is committed (security). Create .env yourself from the
+#    table below - set MONGODB_URI and JWT_SECRET (min 32 chars)
+$env:NODE_ENV="development"        # (Windows PowerShell)
+# or, on Linux/macOS: export NODE_ENV=development
 
 # 3. Run locally (requires a running MongoDB instance)
 npm run dev
@@ -338,7 +340,7 @@ curl -X DELETE http://localhost:3000/api/users/60d21b4667d0d8992e610c85 \
 | **DoS**               | `express.json({ limit: '10kb' })`, capped pagination (max 100)             |
 | **Info leakage**      | `x-powered-by` disabled; 500 responses never include stack traces          |
 | **Log hygiene**       | winston access logs only record method, path, status and duration — request bodies, passwords, JWTs and cookies are never written to logs (covered by a test) |
-| **Secrets**           | `.env` only; `.env.example` committed; `JWT_SECRET` validated (>= 32 chars)|
+| **Secrets**           | `.env` only (never committed); `JWT_SECRET` validated (>= 32 chars) |
 
 ## Testing
 
