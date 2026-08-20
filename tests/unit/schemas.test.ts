@@ -1,9 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  createUserSchema,
-  updateUserSchema,
-} from '../../src/schemas/user.schema.js';
-import { loginSchema, registerSchema } from '../../src/schemas/auth.schema.js';
+import { createUserSchema, updateUserSchema } from '../../src/schemas/user.schema.js';
 import { idParamsSchema, listQuerySchema } from '../../src/schemas/common.schema.js';
 
 describe('createUserSchema', () => {
@@ -68,16 +64,6 @@ describe('updateUserSchema', () => {
   it('validates updated fields', () => {
     expect(() => updateUserSchema.parse({ email: 'nope' })).toThrow();
     expect(() => updateUserSchema.parse({ age: 200 })).toThrow();
-  });
-});
-
-describe('registerSchema / loginSchema', () => {
-  it('requires all fields on register', () => {
-    expect(() => registerSchema.parse({ email: 'a@b.com' })).toThrow();
-  });
-
-  it('requires password on login', () => {
-    expect(() => loginSchema.parse({ email: 'a@b.com', password: '' })).toThrow();
   });
 });
 

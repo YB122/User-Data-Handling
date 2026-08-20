@@ -7,7 +7,6 @@ import {
   updateUser,
 } from '../controllers/user.controller.js';
 import { requireAuth } from '../middleware/auth.js';
-import { csrfProtect } from '../middleware/csrf.js';
 import { validate } from '../middleware/validate.js';
 import { idParamsSchema, listQuerySchema } from '../schemas/common.schema.js';
 import { createUserSchema, updateUserSchema } from '../schemas/user.schema.js';
@@ -15,7 +14,7 @@ import { createUserSchema, updateUserSchema } from '../schemas/user.schema.js';
 const router = Router();
 
 // Every user endpoint requires a valid JWT (Bearer header or httpOnly cookie).
-router.use(requireAuth, csrfProtect);
+router.use(requireAuth);
 
 router.post('/', validate({ body: createUserSchema }), createUser);
 router.get('/', validate({ query: listQuerySchema }), listUsers);

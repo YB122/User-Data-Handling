@@ -5,9 +5,7 @@ import cookieParser from 'cookie-parser';
 import { env } from './config/env.js';
 import { errorHandler, notFoundHandler } from './middleware/error.js';
 import { apiLimiter } from './middleware/rateLimit.js';
-import authRoutes from './routes/auth.routes.js';
 import userRoutes from './routes/user.routes.js';
-import docsRoutes from './routes/docs.routes.js';
 
 export function createApp(): Express {
   const app = express();
@@ -43,13 +41,7 @@ export function createApp(): Express {
 
   app.use('/api', apiLimiter);
 
-  app.get('/health', (_req, res) => {
-    res.json({ status: 'ok' });
-  });
-
-  app.use('/api/auth', authRoutes);
   app.use('/api/users', userRoutes);
-  app.use('/docs', docsRoutes);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

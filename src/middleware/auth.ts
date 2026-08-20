@@ -15,8 +15,8 @@ declare global {
 /**
  * JWT authentication for protected routes.
  * Accepts the token from:
- *  1. `Authorization: Bearer <token>` (API clients) - CSRF not applicable
- *  2. `token` httpOnly cookie (browser clients) - CSRF handled separately
+ *  1. `Authorization: Bearer <token>` (API clients)
+ *  2. `token` httpOnly cookie (browser clients)
  */
 export function requireAuth(req: Request, _res: Response, next: NextFunction): void {
   const authHeader = req.headers.authorization;

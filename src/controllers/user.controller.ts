@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express';
-import { User } from '../models/user.model.js';
+import { User, type IUser } from '../models/user.model.js';
 import type { ListQuery } from '../schemas/common.schema.js';
 import type { CreateUserInput, UpdateUserInput } from '../schemas/user.schema.js';
 import { ApiError } from '../utils/apiError.js';
@@ -9,14 +9,15 @@ import { toUserView } from '../utils/userView.js';
 
 /** POST /users */
 export async function createUser(req: Request, res: Response): Promise<void> {
-  const input = req.body as CreateUserInput;
+  // Explicit field whitelist: only these four fields are ever written to the DB.
+  const { name, email, age, password } = req.body as CreateUserInput;
 
-  const existing = await User.exists({ email: input.email });
+  const existing = await User.exists({ email });
   if (existing) {
     throw ApiError.conflict('Email already exists');
   }
 
-  const user = await User.create(input);
+  const user = await User.create({ name, email, age, password });
   sendSuccess(res, HttpStatus.CREATED, toUserView(user));
 }
 
@@ -50,22 +51,29 @@ export async function getUserById(req: Request, res: Response): Promise<void> {
 
 /** PUT /users/:id */
 export async function updateUser(req: Request, res: Response): Promise<void> {
-  const input = req.body as UpdateUserInput;
+  const { name, email, age, password } = req.body as UpdateUserInput;
 
   const user = await User.findById(req.params.id);
   if (!user) {
     throw ApiError.notFound('User not found');
   }
 
-  if (input.email !== undefined && input.email !== user.email) {
+  if (email !== undefined && email !== user.email) {
     // No operator-based queries: compare ids in JS (sanitizeFilter-safe).
-    const existing = await User.exists({ email: input.email });
+    const existing = await User.exists({ email });
     if (existing && existing._id.toString() !== user.id) {
       throw ApiError.conflict('Email already exists');
     }
   }
 
-  Object.assign(user, input);
+  // Explicit field whitelist: only whitelisted, provided fields are applied.
+  const updates: Partial<Pick<IUser, 'name' | 'email' | 'age' | 'password'>> = {};
+  if (name !== undefined) updates.name = name;
+  if (email !== undefined) updates.email = email;
+  if (age !== undefined) updates.age = age;
+  if (password !== undefined) updates.password = password;
+
+  Object.assign(user, updates);
   await user.save();
 
   sendSuccess(res, HttpStatus.OK, toUserView(user));
@@ -77,5 +85,5 @@ export async function deleteUser(req: Request, res: Response): Promise<void> {
   if (!user) {
     throw ApiError.notFound('User not found');
   }
-  res.status(HttpStatus.NO_CONTENT).send();
+  sendSuccess(res, HttpStatus.OK, { message: 'User deleted successfully', id: user.id });
 }
